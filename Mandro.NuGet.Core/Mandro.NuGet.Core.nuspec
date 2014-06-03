@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Mandro.NuGet.Core</id>
-    <version>1.0.0</version>
+    <version>$version$</version>
     <authors>Mandro</authors>
     <owners>Mandro</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
