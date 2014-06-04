@@ -7,7 +7,7 @@ using Microsoft.Data.OData;
 
 using NuGet;
 
-namespace Mandro.NuGet
+namespace Mandro.NuGet.Core
 {
     internal class ODataPackages
     {
@@ -93,6 +93,32 @@ namespace Mandro.NuGet
         private static IEnumerable<ODataProperty> GetProperties(object obj)
         {
             return obj.GetType().GetProperties().Select(property => new ODataProperty() { Name = property.Name, Value = property.GetValue(obj) }).ToArray();
+        }
+
+        public static Stream CreatePackageStream(string baseAddress, IWebPackage package)
+        {
+            var writerSettings = new ODataMessageWriterSettings()
+            {
+                Indent = true, // pretty printing
+                CheckCharacters = false,
+                BaseUri = new Uri("http://localhost:12345"),
+                Version = ODataVersion.V3
+            };
+
+            writerSettings.SetContentType(ODataFormat.Atom);
+
+            var responseMessage = new MemoryResposneMessage();
+            var writer = new ODataMessageWriter(responseMessage, writerSettings);
+
+            var feedWriter = writer.CreateODataEntryWriter();
+                feedWriter.WriteStart(MapPackageToEntry(baseAddress, package));
+                feedWriter.WriteEnd();
+            feedWriter.Flush();
+
+            var stream = responseMessage.GetStream();
+            stream.Seek(0, SeekOrigin.Begin);
+
+            return stream;
         }
     }
 }

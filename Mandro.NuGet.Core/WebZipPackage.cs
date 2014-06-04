@@ -3,7 +3,7 @@ using System.IO;
 
 using NuGet;
 
-namespace Mandro.NuGet
+namespace Mandro.NuGet.Core
 {
     public class WebZipPackage : ZipPackage, IWebPackage
     {

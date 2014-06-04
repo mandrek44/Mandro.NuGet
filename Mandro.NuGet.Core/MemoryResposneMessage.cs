@@ -3,7 +3,7 @@ using System.IO;
 
 using Microsoft.Data.OData;
 
-namespace Mandro.NuGet
+namespace Mandro.NuGet.Core
 {
     internal class MemoryResposneMessage : IODataResponseMessage
     {

@@ -1,6 +1,6 @@
 using System;
 
-namespace Mandro.NuGet
+namespace Mandro.NuGet.Core
 {
     public class Package
     {

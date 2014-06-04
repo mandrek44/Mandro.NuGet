@@ -1,15 +1,18 @@
 using System;
+using System.Data.Odbc;
 using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 
+using MoreLinq;
+
 using NuGet;
 
 using MemoryCache = System.Runtime.Caching.MemoryCache;
 
-namespace Mandro.NuGet
+namespace Mandro.NuGet.Core
 {
     public class AzureBlobPackageRepository : IPackageRepository
     {
@@ -51,7 +54,7 @@ namespace Mandro.NuGet
 
                     foreach (var package in packages)
                     {
-                        cache.Add(package.Id, package, DateTimeOffset.Now.AddYears(1));
+                        AddToCache(package, cache);
                     }
 
                     return cache;
@@ -99,7 +102,7 @@ namespace Mandro.NuGet
             var blockBlobReference = BlogFilesContainer.GetBlockBlobReference(GetPackageKey(package));
             await blockBlobReference.UploadFromStreamAsync(package.GetStream());
 
-            UpdateCacheAfterAdd(new WebZipPackage(package.GetStream(), blockBlobReference.Uri));
+            AddToCache(new WebZipPackage(package.GetStream(), blockBlobReference.Uri));
         }
 
         public async Task RemovePackageAsync(string packageId, string packageVersion)
@@ -108,13 +111,39 @@ namespace Mandro.NuGet
             {
                 throw new ArgumentNullException("packageId");
             }
-            else if (packageVersion == null)
+            if (packageVersion == null)
             {
                 throw new ArgumentNullException("packageVersion");
             }
 
-            Cache.Remove(packageId);
             await BlogFilesContainer.GetBlockBlobReference(GetPackageKey(packageId, packageVersion)).DeleteAsync();
+
+            var cachedPackage = Cache[packageId] as IWebPackage;
+            if (cachedPackage != null && cachedPackage.Version == SemanticVersion.Parse(packageVersion))
+            {
+                Cache.Remove(packageId);
+
+                // Load the latest package to Cache
+                var packages = BlogFilesContainer.ListBlobs().OfType<CloudBlockBlob>().Select(SafeReadZipPackage).Where(package => package != null).Where(p => p.Id == packageId);
+                if (packages.Any())
+                {
+                    var latestPackage = packages.MaxBy(p => p.Version);
+                    if (latestPackage != null)
+                    {
+                        AddToCache(latestPackage);
+                    }
+                }
+            }
+        }
+
+        public IWebPackage GetPackage(string id, string version)
+        {
+            if (Cache[id] != null && ((IWebPackage)Cache[id]).Version == new SemanticVersion(version))
+            {
+                return Cache[id] as IWebPackage;
+            }
+
+            return SafeReadZipPackage(BlogFilesContainer.GetBlockBlobReference(GetPackageKey(id, version)));
         }
 
         private MemoryCache Cache
@@ -133,19 +162,25 @@ namespace Mandro.NuGet
             }
         }
 
-        private void UpdateCacheAfterAdd(IPackageName package)
+        private void AddToCache(IPackageName package)
         {
-            var cachedObject = Cache[package.Id];
+            var memoryCache = Cache;
+            AddToCache(package, memoryCache);
+        }
+
+        private static void AddToCache(IPackageName package, MemoryCache memoryCache)
+        {
+            var cachedObject = memoryCache[package.Id];
             if (cachedObject != null)
             {
-                if (((IPackage)cachedObject).Version < package.Version)
+                if (package.Version > ((IPackage)cachedObject).Version)
                 {
-                    Cache[package.Id] = package;
+                    memoryCache[package.Id] = package;
                 }
             }
             else
             {
-                Cache[package.Id] = package;
+                memoryCache[package.Id] = package;
             }
         }
 

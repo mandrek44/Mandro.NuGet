@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Mandro.Utils.Web;
@@ -7,7 +8,7 @@ using Microsoft.Owin;
 
 using NuGet;
 
-namespace Mandro.NuGet
+namespace Mandro.NuGet.Core
 {
     public class NuGetServerMiddleware
     {
@@ -27,14 +28,34 @@ namespace Mandro.NuGet
             {
                 await HandleUpload(context);
             }
-            else if (context.Request.Method.ToUpper() == "GET" && context.Request.Path.Value == "/Packages")
+            else if (context.Request.Method.ToUpper() == "GET" && context.Request.Path.Value.StartsWith("/Packages"))
             {
-                await HandleListing(context);
+                await HandlePackageDetails(context);
             }
             else if (context.Request.Method.ToUpper() == "DELETE")
             {
                 await HandleDelete(context);
             }
+        }
+
+        private async Task HandlePackageDetails(IOwinContext context)
+        {
+            var match = Regex.Match(context.Request.Path.Value, @"/Packages\(Id='(?<id>.+?)',Version='(?<version>.+?)'\)");
+            if (!match.Success)
+            {
+                await HandleListing(context);
+                return;
+            }
+            
+            var webPackage = _repository.GetPackage(match.Groups["id"].Value, match.Groups["version"].Value);
+            if (webPackage == null)
+            {
+                return;
+            }
+            
+            var stream = ODataPackages.CreatePackageStream(context.Request.Uri.Scheme + "://" + context.Request.Uri.Host + ":" + context.Request.Uri.Port + "/", webPackage);
+            context.Response.ContentType = "application/atom+xml; charset=utf-8";
+            await stream.CopyToAsync(context.Response.Body);
         }
 
         private async Task HandleDelete(IOwinContext context)

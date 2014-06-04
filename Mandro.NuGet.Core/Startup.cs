@@ -4,7 +4,7 @@ using Microsoft.Owin.Hosting;
 
 using Owin;
 
-namespace Mandro.NuGet
+namespace Mandro.NuGet.Core
 {
     public class Startup
     {
