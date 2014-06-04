@@ -22,7 +22,11 @@
         <!--
             <PackageSource Include="https://www.nuget.org/api/v2/" />
             <PackageSource Include="https://my-nuget-source/nuget/" />
+            
         -->
+
+      <PackageSource Include="https://www.nuget.org/api/v2/" />
+      <PackageSource Include="http://marcindrobik.pl:8080/" />
     </ItemGroup>
 
     <PropertyGroup Condition=" '$(OS)' == 'Windows_NT'">
