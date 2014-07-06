@@ -30,7 +30,15 @@ namespace Mandro.NuGet.Core
             }
             else if (context.Request.Method.ToUpper() == "GET" && context.Request.Path.Value.StartsWith("/Packages"))
             {
-                await HandlePackageDetails(context);
+                var match = Regex.Match(context.Request.Path.Value, @"/Packages\(Id='(?<id>.+?)',Version='(?<version>.+?)'\)");
+                if (!match.Success)
+                {
+                    await HandleListing(context);
+                }
+                else
+                {
+                    await HandlePackageDetails(context, match.Groups["id"].Value, match.Groups["version"].Value);                    
+                }
             }
             else if (context.Request.Method.ToUpper() == "DELETE")
             {
@@ -38,16 +46,9 @@ namespace Mandro.NuGet.Core
             }
         }
 
-        private async Task HandlePackageDetails(IOwinContext context)
+        private async Task HandlePackageDetails(IOwinContext context, string id, string version)
         {
-            var match = Regex.Match(context.Request.Path.Value, @"/Packages\(Id='(?<id>.+?)',Version='(?<version>.+?)'\)");
-            if (!match.Success)
-            {
-                await HandleListing(context);
-                return;
-            }
-            
-            var webPackage = _repository.GetPackage(match.Groups["id"].Value, match.Groups["version"].Value);
+            var webPackage = _repository.GetPackage(id, version);
             if (webPackage == null)
             {
                 return;

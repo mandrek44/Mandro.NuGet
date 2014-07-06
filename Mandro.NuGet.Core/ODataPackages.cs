@@ -71,7 +71,12 @@ namespace Mandro.NuGet.Core
             var tempPackage = new Package()
                               {
                                   Id = package.Id,
-                                  Version = package.Version.ToString(),
+                                  Authors = string.Join(", ", package.Authors),
+                                  Copyright = package.Copyright,
+                                  Owners = string.Join(", ", package.Owners),
+                                  ProjectUrl = package.ProjectUrl != null ? package.ProjectUrl.ToString() : null,
+                                  Title = package.Title,
+                                  Version = package.Version != null ? package.Version.ToString() : null,
                                   IsPrerelease = false,
                                   DownloadCount = package.DownloadCount,
                                   RequireLicenseAcceptance = package.RequireLicenseAcceptance,
