@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -39,6 +40,14 @@ namespace Mandro.NuGet.Core
                 {
                     await HandlePackageDetails(context, match.Groups["id"].Value, match.Groups["version"].Value);                    
                 }
+            }
+            else if (context.Request.Method == "GET" && context.Request.Path.Value.StartsWith("/FindPackagesById()"))
+            {
+                var id = context.Request.Query["id"].Replace("'", string.Empty);
+                var package = _repository.GetWebPackages().Where(pkg => pkg.Id == id).OrderByDescending(pkg => pkg.Version).FirstOrDefault();
+
+                if (package != null)
+                    await HandlePackageDetails(context, package.Id, package.Version.ToString());
             }
             else if (context.Request.Method.ToUpper() == "DELETE")
             {
