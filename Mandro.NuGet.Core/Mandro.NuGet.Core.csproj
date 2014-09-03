@@ -106,7 +106,9 @@
     <Compile Include="WebZipPackage.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="PostBuildScripts\BuildNewPackage-RanAutomatically.ps1" />
     <None Include="PostBuildScripts\New-NuGetPackage.ps1" />
     <None Include="PostBuildScripts\UploadPackage-RunManually.bat" />

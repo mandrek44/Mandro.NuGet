@@ -34,7 +34,18 @@ namespace Mandro.NuGet.Core
                 var match = Regex.Match(context.Request.Path.Value, @"/Packages\(Id='(?<id>.+?)',Version='(?<version>.+?)'\)");
                 if (!match.Success)
                 {
-                    await HandleListing(context);
+                    var filterMatch = Regex.Match(context.Request.QueryString.Value, "filter=(.+?)%20eq%20'(?<id>.+?)'");
+                    if (!filterMatch.Success)
+                    {
+                        await HandleListing(context);
+                    }
+                    else
+                    {
+                        var id = filterMatch.Groups["id"].Value;
+                        var package = _repository.GetPackages().Where(pkg => string.Equals(pkg.Id, id, StringComparison.InvariantCultureIgnoreCase)).OrderByDescending(pkg => pkg.Version).First();
+
+                        await HandlePackageDetails(context, package.Id, package.Version.ToString());                    
+                    }
                 }
                 else
                 {

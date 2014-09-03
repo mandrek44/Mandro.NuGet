@@ -21,7 +21,7 @@ namespace Mandro.NuGet.Console
             app.Use(
                 async (context, next) =>
                 {
-                    System.Console.WriteLine("{0} {1}", context.Request.Method, context.Request.Path);
+                    System.Console.WriteLine("{0} {1}{2}", context.Request.Method, context.Request.Path, context.Request.QueryString);
                     await next();
                 });
 
